@@ -32,7 +32,6 @@ function Inventory() {
   const handleStockChange = (e) => setStockFilter(e.target.value);
   const handleSortChange = (e) => setSortOption(e.target.value);
 
-  // Eliminar producto
   const handleDelete = async (productId) => {
     if (!window.confirm('¿Estás seguro de que deseas eliminar este producto?')) return;
     try {
@@ -40,7 +39,6 @@ function Inventory() {
         method: 'DELETE',
       });
       if (response.ok) {
-        // Volver a cargar productos después de eliminar
         const res = await fetch(`${import.meta.env.VITE_API_URL}/products`);
         if (res.ok) {
           const data = await res.json();

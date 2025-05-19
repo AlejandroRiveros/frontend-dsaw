@@ -11,12 +11,13 @@ const firebaseConfig = {
   measurementId: "G-ZQXF79743N"
 };
 
-// Verificar si ya existe una instancia de Firebase
-const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
+let app;
+if (!getApps().length) {
+  app = initializeApp(firebaseConfig);
+} else {
+  app = getApps()[0];
+}
+
 const messaging = getMessaging(app);
-
-console.log("✅ Firebase app inicializado con bucket:", app.options.storageBucket);
-
-
 
 export { app, messaging };
