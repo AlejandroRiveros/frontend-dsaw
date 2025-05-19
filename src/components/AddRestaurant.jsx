@@ -6,9 +6,6 @@ function AddRestaurant() {
   const [formData, setFormData] = useState({
     name: '',
     horario: '',
-    description: '',
-    latitude: '',
-    longitude: '',
     icon: ''
   });
   const [imageFile, setImageFile] = useState(null);
@@ -52,14 +49,10 @@ function AddRestaurant() {
         menuUrl = await getDownloadURL(pdfRef);
       }
 
-      const restaurantData = { ...formData, image: imageUrl,
-        menu: menuUrl,
-        latitude: parseFloat(formData.latitude),
-        longitude: parseFloat(formData.longitude), };
-console.log("Datos enviados al backend:", restaurantData);
+      const restaurantData = { ...formData, image: imageUrl, menu: menuUrl };
+      console.log("Datos enviados al backend:", restaurantData);
 
-
-      await fetch('https://backend-proyecto-dsaw-production.up.railway.app/restaurants', {
+      await fetch(`${import.meta.env.VITE_API_URL}/restaurants`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(restaurantData)
@@ -78,9 +71,6 @@ console.log("Datos enviados al backend:", restaurantData);
         <form onSubmit={handleSubmit} className="space-y-4">
           <input name="name" value={formData.name} onChange={handleChange} placeholder="Nombre" className="w-full p-2 border rounded" required />
           <input name="horario" value={formData.horario} onChange={handleChange} placeholder="Horario" className="w-full p-2 border rounded" required />
-          <textarea name="description" value={formData.description} onChange={handleChange} placeholder="Descripción" className="w-full p-2 border rounded" required />
-          <input type="number" name="latitude" value={formData.latitude} onChange={handleChange} placeholder="Latitud" className="w-full p-2 border rounded" step="any" required />
-          <input type="number" name="longitude" value={formData.longitude} onChange={handleChange} placeholder="Longitud" className="w-full p-2 border rounded" step="any" required />
           <select name="icon" value={formData.icon} onChange={handleChange} className="w-full p-2 border rounded">
             <option value="">Seleccionar icono</option>
             <option value="cafe">☕ Café</option>
