@@ -10,7 +10,7 @@ function Restaurantes() {
 
   const fetchRestaurants = async () => {
     try {
-      const res = await fetch('https://backend-proyecto-dsaw-production.up.railway.app/restaurants');
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/restaurants`);
       if (!res.ok) {
         throw new Error('Error al cargar los restaurantes');
       }
