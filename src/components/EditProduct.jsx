@@ -1,9 +1,11 @@
-import React, { useState, useEffect } from 'react'; // Agregamos useEffect
+import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import ReactModal from 'react-modal'; // Importamos React Modal
-import ErrorMessage from './ErrorMessage.jsx'; // Corregimos la importación agregando la extensión .js
+import ReactModal from 'react-modal';
+import ErrorMessage from './ErrorMessage.jsx';
+import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { app } from '../firebaseConfig';
 
-ReactModal.setAppElement('#root'); // Configuramos el elemento raíz para accesibilidad
+ReactModal.setAppElement('#root');
 
 function EditProduct() {
   const navigate = useNavigate();
@@ -11,10 +13,13 @@ function EditProduct() {
   const [productName, setProductName] = useState('');
   const [price, setPrice] = useState('');
   const [units, setUnits] = useState('');
-  const [isModalOpen, setIsModalOpen] = useState(false); // Estado para controlar el modal
-  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false); // Estado para controlar el modal de eliminación
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [category, setCategory] = useState('');
   const [restaurant, setRestaurant] = useState('');
+  const [currentImage, setCurrentImage] = useState('');
+  const [newImageFile, setNewImageFile] = useState(null);
+  const storage = getStorage(app);
 
   const formatPrice = (value) => {
     const numericValue = value.replace(/\D/g, '');
@@ -27,10 +32,7 @@ function EditProduct() {
   };
 
   const parsePrice = (formattedPrice) => {
-    if (typeof formattedPrice !== 'string') {
-      console.error('formattedPrice no es una cadena:', formattedPrice);
-      return 0; // Valor predeterminado en caso de error
-    }
+    if (typeof formattedPrice !== 'string') return 0;
     return parseInt(formattedPrice.replace(/\./g, ''), 10);
   };
 
@@ -45,32 +47,44 @@ function EditProduct() {
           setUnits(product.stock);
           setCategory(product.category || '');
           setRestaurant(product.restaurant || '');
-        } else {
-          console.error('Error al obtener el producto');
+          setCurrentImage(product.image);
         }
       } catch (error) {
         console.error('Error al conectar con el servidor:', error);
       }
     };
-
     fetchProduct();
   }, [id]);
 
   const handleUpdate = async () => {
     try {
-      console.log("Datos enviados al backend:", { name: productName, price: parsePrice(price), stock: units });
+      let imageUrl = currentImage;
+
+      if (newImageFile) {
+        const storageRef = ref(storage, `products/${Date.now()}-${newImageFile.name}`);
+        await uploadBytes(storageRef, newImageFile);
+        imageUrl = await getDownloadURL(storageRef);
+      }
+
       const response = await fetch(`${import.meta.env.VITE_API_URL}/inventory/${id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: productName, price: parsePrice(price), stock: units, category, restaurant }),
+        body: JSON.stringify({
+          name: productName,
+          price: parsePrice(price),
+          stock: units,
+          category,
+          restaurant,
+          image: imageUrl
+        }),
       });
 
       if (response.ok) {
-        setIsModalOpen(true); // Mostramos el modal
+        setIsModalOpen(true);
         setTimeout(() => {
-          setIsModalOpen(false); // Cerramos el modal automáticamente
-          navigate('/inventory'); // Redirigimos al inventario
-        }, 3000); // 3 segundos
+          setIsModalOpen(false);
+          navigate('/inventory');
+        }, 3000);
       } else {
         console.error('Error al actualizar el producto');
       }
@@ -92,8 +106,6 @@ function EditProduct() {
           setIsModalOpen(false);
           navigate('/inventory');
         }, 3000);
-      } else {
-        console.error('Error al eliminar el producto');
       }
     } catch (error) {
       console.error('Error al conectar con el servidor:', error);
@@ -101,8 +113,8 @@ function EditProduct() {
   };
 
   const closeModal = () => {
-    setIsModalOpen(false); // Cerramos el modal
-    navigate('/inventory'); // Redirigimos al inventario
+    setIsModalOpen(false);
+    navigate('/inventory');
   };
 
   return (
@@ -115,16 +127,10 @@ function EditProduct() {
       >
         <h2 className="text-xl font-bold text-red-600 mb-4">¿Estás seguro que quieres eliminar este producto?</h2>
         <div className="flex justify-center space-x-4">
-          <button
-            onClick={handleDeleteConfirmation}
-            className="px-6 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600"
-          >
+          <button onClick={handleDeleteConfirmation} className="px-6 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600">
             Sí
           </button>
-          <button
-            onClick={() => setIsDeleteModalOpen(false)}
-            className="px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
-          >
+          <button onClick={() => setIsDeleteModalOpen(false)} className="px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600">
             No
           </button>
         </div>
@@ -136,17 +142,38 @@ function EditProduct() {
         className="bg-white rounded-lg shadow-lg p-6 max-w-sm mx-auto text-center"
         overlayClassName="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center"
       >
-        <h2 className="text-xl font-bold text-green-600 mb-4">¡Producto Eliminado de manera satisfactoria!</h2>
-        <p className="text-gray-700">El producto ha sido actualizado correctamente.</p>
+        <h2 className="text-xl font-bold text-green-600 mb-4">¡Producto actualizado!</h2>
+        <p className="text-gray-700">Los cambios se han guardado correctamente.</p>
       </ReactModal>
+
       <header className="w-full bg-blue-700 text-white py-4 px-8 flex justify-between items-center">
         <h1 className="text-xl font-bold">Nombre de POS</h1>
         <h2 className="text-lg">Editar Producto</h2>
         <img src={`${window.location.origin}/logo.png`} alt="Logo" className="h-10" />
       </header>
+
       <div className="flex flex-col items-center justify-center flex-grow">
         <div className="border border-gray-300 rounded-lg p-8 bg-white w-96">
-          <div className="h-32 bg-gray-300 mb-4"></div>
+          <div className="h-48 bg-gray-200 flex items-center justify-center mb-4 rounded">
+            {newImageFile ? (
+              <img src={URL.createObjectURL(newImageFile)} alt="Vista previa" className="h-full object-cover rounded" />
+            ) : currentImage ? (
+              <img src={currentImage} alt="Imagen actual" className="h-full object-cover rounded" />
+            ) : (
+              <span className="text-gray-500">Sin imagen</span>
+            )}
+          </div>
+
+          <div className="mb-4">
+            <label className="block text-lg font-semibold mb-2">Cambiar imagen:</label>
+            <input
+              type="file"
+              accept="image/*"
+              onChange={(e) => setNewImageFile(e.target.files[0])}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+            />
+          </div>
+
           <div className="mb-4">
             <label className="block text-lg font-semibold mb-2">Nombre Producto:</label>
             <input
@@ -157,6 +184,7 @@ function EditProduct() {
               readOnly
             />
           </div>
+
           <div className="mb-4">
             <label className="block text-lg font-semibold mb-2">Precio:</label>
             <input
@@ -166,6 +194,7 @@ function EditProduct() {
               className="w-full px-4 py-2 border border-gray-300 rounded-lg"
             />
           </div>
+
           <div className="mb-4">
             <label className="block text-lg font-semibold mb-2">Unidades:</label>
             <input
@@ -175,11 +204,10 @@ function EditProduct() {
               className="w-full px-4 py-2 border border-gray-300 rounded-lg"
             />
           </div>
+
           <div className="mb-4">
-            <label htmlFor="category" className="block text-gray-700 font-bold mb-2">Categoría:</label>
+            <label className="block text-gray-700 font-bold mb-2">Categoría:</label>
             <select
-              id="category"
-              name="category"
               value={category}
               onChange={(e) => setCategory(e.target.value)}
               className="w-full border border-gray-300 rounded-lg p-2"
@@ -195,11 +223,10 @@ function EditProduct() {
               <option value="Desayunos">Desayunos</option>
             </select>
           </div>
+
           <div className="mb-4">
-            <label htmlFor="restaurant" className="block text-gray-700 font-bold mb-2">Restaurante:</label>
+            <label className="block text-gray-700 font-bold mb-2">Restaurante:</label>
             <select
-              id="restaurant"
-              name="restaurant"
               value={restaurant}
               onChange={(e) => setRestaurant(e.target.value)}
               className="w-full border border-gray-300 rounded-lg p-2"
@@ -215,18 +242,17 @@ function EditProduct() {
               <option value="Terraza Living Lab">Terraza Living Lab</option>
             </select>
           </div>
-          <button onClick={handleUpdate} className="mt-8 px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 w-full">Actualizar</button>
-          <button
-            onClick={() => setIsDeleteModalOpen(true)}
-            className="mt-4 px-6 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 w-full"
-          >
+
+          <button onClick={handleUpdate} className="mt-8 px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 w-full">
+            Actualizar
+          </button>
+
+          <button onClick={() => setIsDeleteModalOpen(true)} className="mt-4 px-6 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 w-full">
             Eliminar
           </button>
         </div>
-        <button
-          onClick={() => navigate('/inventory')}
-          className="mt-8 px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
-        >
+
+        <button onClick={() => navigate('/inventory')} className="mt-8 px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600">
           Volver
         </button>
       </div>
