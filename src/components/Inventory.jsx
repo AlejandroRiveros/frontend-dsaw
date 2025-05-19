@@ -32,6 +32,28 @@ function Inventory() {
   const handleStockChange = (e) => setStockFilter(e.target.value);
   const handleSortChange = (e) => setSortOption(e.target.value);
 
+  // Eliminar producto
+  const handleDelete = async (productId) => {
+    if (!window.confirm('¿Estás seguro de que deseas eliminar este producto?')) return;
+    try {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/inventory/${productId}`, {
+        method: 'DELETE',
+      });
+      if (response.ok) {
+        // Volver a cargar productos después de eliminar
+        const res = await fetch(`${import.meta.env.VITE_API_URL}/products`);
+        if (res.ok) {
+          const data = await res.json();
+          setProducts(data);
+        }
+      } else {
+        alert('Error al eliminar el producto');
+      }
+    } catch (error) {
+      alert('Error al conectar con el servidor');
+    }
+  };
+
   const filteredProducts = products
     .filter((product) =>
       categoryFilter ? product.category === categoryFilter : true
@@ -124,12 +146,20 @@ function Inventory() {
               <p className="text-center">Precio: ${product.price.toLocaleString('es-CO')}</p>
               <p className="text-center">Unidades: {product.stock}</p>
               <p className="text-center">Categoría: {product.category}</p>
-              <button
-                onClick={() => navigate(`/edit-product/${product._id}`)}
-                className="w-full bg-blue-500 text-white py-2 mt-4 rounded-lg hover:bg-blue-600"
-              >
-                Editar
-              </button>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => navigate(`/edit-product/${product._id}`)}
+                  className="w-full bg-blue-500 text-white py-2 mt-4 rounded-lg hover:bg-blue-600"
+                >
+                  Editar
+                </button>
+                <button
+                  onClick={() => handleDelete(product._id)}
+                  className="w-full bg-red-500 text-white py-2 mt-4 rounded-lg hover:bg-red-600"
+                >
+                  Eliminar
+                </button>
+              </div>
             </div>
           ))}
         </div>
