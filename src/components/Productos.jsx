@@ -157,7 +157,7 @@ function Productos() {
               <div key={product._id} className="border border-gray-300 rounded-lg p-4 bg-white shadow-md relative overflow-hidden">
                 <div className="h-40 w-full bg-gray-300 mb-4 flex items-center justify-center relative overflow-hidden rounded-lg">
                   <img
-                    src={`https://backend-proyecto-dsaw-production.up.railway.app${product.image}`}
+                    src={product.image}
                     alt={product.name}
                     className="h-full w-full object-cover"
                   />

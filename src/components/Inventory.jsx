@@ -114,7 +114,11 @@ function Inventory() {
           {filteredProducts.map((product) => (
             <div key={product._id} className="border border-gray-300 rounded-lg p-4">
               <div className="h-32 bg-gray-300 mb-4 flex items-center justify-center">
-                <img src={`${import.meta.env.VITE_API_URL}${product.image}`} alt={product.name} className="h-full object-contain" />
+                <img
+                  src={product.image}
+                  alt={product.name}
+                  className="h-full object-contain"
+                />
               </div>
               <h3 className="text-lg font-bold text-center">{product.name}</h3>
               <p className="text-center">Precio: ${product.price.toLocaleString('es-CO')}</p>
