@@ -100,9 +100,6 @@ function HomeCliente() {
         <section className="mt-10">
           <h2 className="text-xl font-bold mb-4">⭐ Platos destacados</h2>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <img src="/destacado1.png" alt="Plato 1" className="rounded-lg shadow" />
-            <img src="/destacado2.png" alt="Plato 2" className="rounded-lg shadow" />
-            <img src="/destacado3.png" alt="Plato 3" className="rounded-lg shadow" />
           </div>
         </section>
       </main>
